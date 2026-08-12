@@ -1,5 +1,9 @@
 # The CLI (src/log_shot.py) needs nothing beyond the Python standard library.
-# These are only required for the analysis notebook.
+
+# Analysis notebook
 pandas>=2.2
 matplotlib>=3.8
 jupyterlab>=4.0
+
+# Tests
+pytest>=8.0
