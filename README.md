@@ -143,6 +143,13 @@ grind_setting  shots  avg_time_s  avg_brew_ratio  avg_rating
 
 Setting 3.5 lands in the middle of the target window and rates highest.
 
+![Grind setting versus extraction time, with the 22-32 second target window shaded](assets/grind-vs-extraction.png)
+
+Every shot as one point, coloured by rating. Finer than 3.5 runs long and
+scores badly, coarser than 4.0 runs short and scores badly — 3.5 is the only
+setting that sits inside the window across the board. The chart is produced
+by the last cell of the notebook.
+
 The remaining queries cover the brew ratio per shot, the full parameter set
 of every top-rated shot, the effect of bean rest time (a `julianday()`
 difference), and a rating trend over time using a window function.
