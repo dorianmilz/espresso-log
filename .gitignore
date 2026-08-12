@@ -1,0 +1,21 @@
+# Database — the real log is personal data and changes constantly.
+# Anyone can rebuild it from schema.sql + seed.sql.
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Local-only instructions for Claude Code
+CLAUDE.local.md
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
