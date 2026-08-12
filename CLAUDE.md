@@ -18,6 +18,9 @@ version 1.
   (see `.gitignore`) — only schema and seed data.
 - Interface: a CLI script for logging (`src/log_shot.py`) and a Jupyter
   notebook for analysis (`notebooks/analyse.ipynb`). No web frontend.
+- Tests: `pytest`, run with `pytest` from the repository root. Each test
+  gets its own temporary database through `ESPRESSO_DB`; the real
+  `data/espresso.db` is never touched.
 - Language used in code, comments and README: English.
 
 ## Data model
@@ -73,6 +76,12 @@ Notes on the constraints:
 │   └── log_shot.py
 ├── notebooks/
 │   └── analyse.ipynb
+├── tests/
+│   ├── conftest.py  # shared fixtures
+│   ├── test_schema.py
+│   ├── test_db.py
+│   └── test_cli.py
+├── assets/          # charts exported from the notebook for the README
 └── data/            # git-ignored, holds the real espresso.db
 ```
 

@@ -164,6 +164,28 @@ smooths out single good or bad shots.
 jupyter lab notebooks/analyse.ipynb
 ```
 
+## Testing
+
+```bash
+pytest
+```
+
+41 tests covering three layers:
+
+- **`tests/test_schema.py`** — every `CHECK` constraint and the foreign key,
+  written straight to SQLite. Each rule is tested from both sides: a value
+  that must be accepted and one that must be rejected. `yield_g = 0` has its
+  own test, because that is a deliberate design decision rather than an
+  oversight.
+- **`tests/test_db.py`** — `init_db()` builds the tables, indexes and view
+  and is safe to run twice; `get_connection()` returns rows addressable by
+  column name and has foreign key enforcement switched on.
+- **`tests/test_cli.py`** — the CLI driven as a real subprocess, so argument
+  parsing, exit codes and printed output are covered too.
+
+Each test runs against its own temporary database via the `ESPRESSO_DB`
+environment variable, so `data/espresso.db` is never touched.
+
 ## Development Process
 
 I built this project with [Claude Code](https://claude.com/claude-code)
@@ -179,7 +201,6 @@ modeling. See the commit history for the incremental build order.
 
 ## Possible next steps
 
-- Automated tests (`pytest`) for the CLI and the constraints
 - A `pull` command that repeats the parameters of a previous shot
 - Tracking water hardness and basket size
 - Exporting a monthly summary
