@@ -5,5 +5,8 @@ pandas>=2.2
 matplotlib>=3.8
 jupyterlab>=4.0
 
+# Web interface
+streamlit>=1.40
+
 # Tests
 pytest>=8.0
