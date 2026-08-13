@@ -90,6 +90,47 @@ $ python3 src/log_shot.py add-shot --bean-id 999 --dose-g 18 --rating 3
 Rejected by the database: FOREIGN KEY constraint failed
 ```
 
+## Quick entry (mobile-friendly)
+
+Typing at a terminal is the least likely thing to happen right after pulling
+a shot. [`app.py`](app.py) is a small [Streamlit](https://streamlit.io) page
+for exactly that moment: bean, dose and grind setting come pre-filled from
+the last shot, so usually only the extraction time and the rating need
+touching.
+
+Locally:
+
+```bash
+streamlit run app.py
+```
+
+To reach it from a phone, the app has to listen on the network rather than
+on localhost only. First find the Mac's address on the Wi-Fi interface:
+
+```bash
+ipconfig getifaddr en0
+```
+
+Then start it with that in mind:
+
+```bash
+streamlit run app.py --server.address 0.0.0.0
+```
+
+Streamlit prints a `Network URL` — open it on the phone, for example
+`http://192.168.2.51:8501`.
+
+Three things worth knowing:
+
+- Phone and Mac must be on the **same** Wi-Fi.
+- macOS asks once whether Python may accept incoming connections. Without
+  that permission the page stays unreachable from the phone.
+- **The app has no login.** Anyone on the same network who opens the address
+  can add shots. Fine for a home network, not something to expose further.
+
+If `ipconfig getifaddr en0` prints nothing, Wi-Fi is on a different
+interface; `route get default | grep interface` names the active one.
+
 ## Analysis
 
 All queries live in [`queries.sql`](queries.sql), commented one by one. Run

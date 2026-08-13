@@ -8,16 +8,24 @@ This file is the single source of truth for the project setup.
 Espresso Log: a SQL database project for tracking espresso shots
 (DeLonghi La Specialista Arte). Part of a GitHub portfolio for a career
 change into software development. The goal is to demonstrate a clean
-relational data model and meaningful SQL analysis. No web frontend in
-version 1.
+relational data model and meaningful SQL analysis.
 
-## Tech stack (version 1)
+Version 1 deliberately shipped without a web frontend, to keep the focus
+on the data model. Version 2 adds a Streamlit page (`app.py`) for logging
+a shot from a phone on the same network — the analysis side stays SQL.
+
+## Tech stack (version 2)
 
 - Language: Python (3.11+). The CLI uses the standard library only.
 - Database: SQLite, local. The real `.db` file is never committed
   (see `.gitignore`) — only schema and seed data.
-- Interface: a CLI script for logging (`src/log_shot.py`) and a Jupyter
-  notebook for analysis (`notebooks/analyse.ipynb`). No web frontend.
+- Interface: a CLI script for logging (`src/log_shot.py`), a Streamlit
+  web page for quick entry (`app.py`), and a Jupyter notebook for
+  analysis (`notebooks/analyse.ipynb`).
+- Web interface: `streamlit`. It goes through `get_connection()` from
+  `src/db.py` like everything else — no separate connection logic. The
+  number fields deliberately impose no bounds of their own; the CHECK
+  constraints in `schema.sql` remain the single authority on valid data.
 - Tests: `pytest`, run with `pytest` from the repository root. Each test
   gets its own temporary database through `ESPRESSO_DB`; the real
   `data/espresso.db` is never touched.
@@ -68,6 +76,7 @@ Notes on the constraints:
 ├── CLAUDE.md
 ├── .gitignore
 ├── requirements.txt
+├── app.py           # Streamlit quick-entry page
 ├── schema.sql
 ├── seed.sql
 ├── queries.sql
