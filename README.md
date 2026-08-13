@@ -21,13 +21,24 @@ roaster     TEXT                dose_g            REAL   > 0
 roast_date  DATE                grind_setting     REAL   > 0
 notes       TEXT                extraction_time_s INTEGER > 0
                                 yield_g           REAL   >= 0
-                                water_temp_c      REAL
+                                water_temp_c      REAL   92 | 94 | 96
                                 taste_rating      INTEGER 1-5
-                                taste_notes       TEXT
+                                taste_notes       TEXT   one of 8 categories
                                 machine           TEXT
 ```
 
-Three decisions worth pointing out:
+Two columns take values from a fixed list rather than free input:
+
+- **`water_temp_c`** — the machine offers three settings: `92.0` (Low),
+  `94.0` (Middle), `96.0` (High).
+- **`taste_notes`** — `Chocolatey & Cocoa`, `Nutty & Toasty`, `Fruity-Sweet`,
+  `Citrusy & Zesty`, `Floral & Tea-like`, `Spicy & Earthy`,
+  `Sweet & Caramelized`, `Balanced & Mild`.
+
+Both stay optional: a `CHECK` rejects a row only when its expression is
+false, and `NULL IN (...)` is neither, so an empty field still passes.
+
+Four decisions worth pointing out:
 
 - **Brew ratio is never stored.** It is `yield_g / dose_g`, so storing it
   would allow it to contradict the columns it derives from. It is computed
@@ -37,6 +48,10 @@ Three decisions worth pointing out:
   nothing is a real result worth recording, not an input error.
 - **`grind_setting` is a number, not text.** That is what makes
   "which grinder setting hits the target extraction window?" answerable.
+- **`taste_notes` is a controlled vocabulary, not free text.** "Caramel, red
+  apple, long finish" reads nicely but cannot be grouped, so
+  "how do chocolatey beans score?" would stay unanswerable. The eight
+  categories cost some descriptive detail and buy `GROUP BY`.
 
 Value ranges are enforced by `CHECK` constraints in the database itself, so
 invalid rows are rejected no matter which client writes them.
@@ -72,8 +87,13 @@ Every field can also be passed as a flag, which makes the CLI scriptable:
 
 ```bash
 python3 src/log_shot.py add-shot --bean-id 3 --dose-g 18 --grind 3.5 \
-    --time-s 29 --yield-g 36 --rating 5 --notes "caramel, long finish"
+    --time-s 29 --yield-g 36 --temp-c 94 --rating 5 --notes 7
 ```
+
+`--temp-c` takes one of the three machine settings, and `--notes` a number
+from the category list — `7` is `Sweet & Caramelized`. Both are listed in
+`add-shot --help`, and interactive mode offers them as numbered menus, so
+nobody has to remember the exact spelling.
 
 ```
 Added shot #33

@@ -50,9 +50,13 @@ CREATE TABLE shots (
   grind_setting     REAL          CHECK (grind_setting > 0),
   extraction_time_s INTEGER       CHECK (extraction_time_s > 0),
   yield_g           REAL          CHECK (yield_g >= 0),
-  water_temp_c      REAL,
+  water_temp_c      REAL          CHECK (water_temp_c IN (92.0, 94.0, 96.0)),
   taste_rating      INTEGER       CHECK (taste_rating BETWEEN 1 AND 5),
-  taste_notes       TEXT,
+  taste_notes       TEXT          CHECK (taste_notes IN (
+                                    'Chocolatey & Cocoa', 'Nutty & Toasty',
+                                    'Fruity-Sweet',       'Citrusy & Zesty',
+                                    'Floral & Tea-like',  'Spicy & Earthy',
+                                    'Sweet & Caramelized','Balanced & Mild')),
   machine           TEXT DEFAULT 'DeLonghi La Specialista Arte'
 );
 ```
@@ -66,6 +70,18 @@ Notes on the constraints:
   with 0 g output is a real result worth recording, not an input error.
 - Brew ratio (`yield_g / dose_g`) is **not stored**. It is computed in
   queries and exposed through the view `v_shot_details`.
+- `water_temp_c` and `taste_notes` are **controlled vocabularies**. The
+  three temperatures are the settings of this one machine model — the
+  constraint is deliberately tied to it. The eight taste categories replace
+  free text so the column can be grouped in queries.
+- Both restricted columns stay **optional**: a CHECK rejects a row only
+  when its expression is false, and `NULL IN (...)` is neither true nor
+  false, so an empty field passes without an extra `OR ... IS NULL`.
+- The allowed values live once in Python, as `WATER_TEMPS_C`, `TEMP_LABELS`
+  and `TASTE_NOTES` in `src/db.py`; the CLI and the Streamlit page build
+  their menus from them. `schema.sql` stays the authority — the schema
+  tests insert every value from those constants, so a drift between the
+  two turns the suite red.
 
 ## Folder structure
 
