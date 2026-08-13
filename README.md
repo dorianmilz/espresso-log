@@ -231,21 +231,31 @@ jupyter lab notebooks/analyse.ipynb
 pytest
 ```
 
-41 tests covering three layers:
+64 tests covering three layers:
 
 - **`tests/test_schema.py`** — every `CHECK` constraint and the foreign key,
   written straight to SQLite. Each rule is tested from both sides: a value
   that must be accepted and one that must be rejected. `yield_g = 0` has its
   own test, because that is a deliberate design decision rather than an
-  oversight.
+  oversight. The two controlled vocabularies are covered value by value —
+  every allowed water temperature and taste category is inserted, near
+  misses like `chocolatey & cocoa` are rejected, and `NULL` is accepted for
+  both, since the columns stay optional.
 - **`tests/test_db.py`** — `init_db()` builds the tables, indexes and view
   and is safe to run twice; `get_connection()` returns rows addressable by
   column name and has foreign key enforcement switched on.
 - **`tests/test_cli.py`** — the CLI driven as a real subprocess, so argument
-  parsing, exit codes and printed output are covered too.
+  parsing, exit codes and printed output are covered too, including that
+  `--notes 7` is stored as `Sweet & Caramelized` rather than as `7`.
 
 Each test runs against its own temporary database via the `ESPRESSO_DB`
 environment variable, so `data/espresso.db` is never touched.
+
+The vocabulary tests parametrise over the constants in `src/db.py` rather
+than over a second hand-written list. `schema.sql` remains the authority: if
+the Python lists and the schema ever disagree, the offending value is
+rejected by the database and exactly one test fails, named after the value
+that drifted. That is the point of the copy in Python being testable at all.
 
 ## Development Process
 
