@@ -28,14 +28,20 @@ import streamlit as st
 # and tests/conftest.py do it.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-from db import DB_PATH, get_connection  # noqa: E402
+from db import (  # noqa: E402
+    DB_PATH,
+    TASTE_NOTES,
+    TEMP_LABELS,
+    WATER_TEMPS_C,
+    get_connection,
+)
 
 # Fallbacks for the very first shot, when there is nothing to copy from.
 DEFAULT_DOSE_G = 18.0
 DEFAULT_GRIND = 3.5
 DEFAULT_TIME_S = 28
 DEFAULT_YIELD_G = 36.0
-DEFAULT_TEMP_C = 93.0
+DEFAULT_TEMP_C = 94.0  # Middle — must be one of WATER_TEMPS_C
 
 
 # ---------------------------------------------------------------------------
@@ -195,15 +201,24 @@ else:
             yield_g = st.number_input("Yield (g)", min_value=0.0,
                                       value=DEFAULT_YIELD_G, step=0.5,
                                       format="%.1f")
-            water_temp_c = st.number_input("Water temperature (°C)",
-                                           min_value=0.0,
-                                           value=DEFAULT_TEMP_C, step=1.0,
-                                           format="%.1f")
+            # The machine offers three settings, so this is a choice rather
+            # than a free number — see the CHECK in schema.sql.
+            water_temp_c = st.selectbox(
+                "Water temperature",
+                WATER_TEMPS_C,
+                index=WATER_TEMPS_C.index(DEFAULT_TEMP_C),
+                format_func=lambda t: f"{TEMP_LABELS[t]} ({t:.0f} °C)",
+            )
             taste_rating = st.slider("Taste rating", 1, 5, 3)
 
         shot_date = st.date_input("Date", value=date.today())
-        taste_notes = st.text_input("Taste notes",
-                                    placeholder="caramel, long finish")
+
+        # A leading None gives the "no answer" option; the column is optional.
+        taste_notes = st.selectbox(
+            "Taste notes",
+            (None, *TASTE_NOTES),
+            format_func=lambda note: "—" if note is None else note,
+        )
 
         saved = st.form_submit_button("Save shot", type="primary")
 
@@ -218,7 +233,7 @@ else:
                 yield_g,
                 water_temp_c,
                 taste_rating,
-                blank_to_none(taste_notes),
+                taste_notes,
             )
         except sqlite3.IntegrityError as error:
             # A CHECK or FOREIGN KEY constraint said no. Show the reason

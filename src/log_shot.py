@@ -23,7 +23,14 @@ from pathlib import Path
 # src/ directory importable, so "import db" resolves.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from db import DB_PATH, get_connection, init_db  # noqa: E402
+from db import (  # noqa: E402
+    DB_PATH,
+    TASTE_NOTES,
+    TEMP_LABELS,
+    WATER_TEMPS_C,
+    get_connection,
+    init_db,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +80,33 @@ def valid_date(raw: str) -> str:
 def fill(value, prompt: str, cast=str, default=None, required: bool = False):
     """Keep a value passed as a flag, otherwise ask for it."""
     return value if value is not None else ask(prompt, cast, default, required)
+
+
+def fill_choice(value, prompt: str, options, labels=None):
+    """Keep a flag value, otherwise offer a numbered menu.
+
+    Used for the two columns schema.sql restricts to a fixed list. Follows
+    the same rule as ask(): with no terminal attached nothing is asked and
+    the optional field stays empty.
+    """
+    if value is not None:
+        return value
+
+    if not sys.stdin.isatty():
+        return None
+
+    print(f"{prompt}:")
+    for number, option in enumerate(options, start=1):
+        label = labels[option] if labels else option
+        print(f"  {number}) {label}")
+
+    while True:
+        raw = input("  Choice (blank to skip): ").strip()
+        if not raw:
+            return None
+        if raw.isdigit() and 1 <= int(raw) <= len(options):
+            return options[int(raw) - 1]
+        print(f"  Enter a number between 1 and {len(options)}.")
 
 
 def print_table(rows: list[sqlite3.Row], columns: list[str]) -> None:
@@ -144,9 +178,14 @@ def cmd_add_shot(args: argparse.Namespace) -> int:
     grind = fill(args.grind, "Grind setting", float)
     seconds = fill(args.time_s, "Extraction time in s", int)
     yield_g = fill(args.yield_g, "Yield in g", float)
-    temp_c = fill(args.temp_c, "Water temperature in C", float)
+    temp_c = fill_choice(args.temp_c, "Water temperature",
+                         WATER_TEMPS_C,
+                         {t: f"{TEMP_LABELS[t]} ({t:.0f} C)"
+                          for t in WATER_TEMPS_C})
     rating = fill(args.rating, "Taste rating 1-5", int)
-    taste_notes = fill(args.notes, "Taste notes")
+    # --notes carries a 1-based index into TASTE_NOTES; translate it here.
+    taste_notes = (TASTE_NOTES[args.notes - 1] if args.notes is not None
+                   else fill_choice(None, "Taste notes", TASTE_NOTES))
 
     try:
         with get_connection() as connection:
@@ -229,9 +268,18 @@ def build_parser() -> argparse.ArgumentParser:
     shot_parser.add_argument("--grind", type=float, help="grinder setting")
     shot_parser.add_argument("--time-s", dest="time_s", type=int)
     shot_parser.add_argument("--yield-g", dest="yield_g", type=float)
-    shot_parser.add_argument("--temp-c", dest="temp_c", type=float)
+    shot_parser.add_argument(
+        "--temp-c", dest="temp_c", type=float, choices=list(WATER_TEMPS_C),
+        help="water temperature: " + ", ".join(
+            f"{value:.0f} = {TEMP_LABELS[value]}" for value in WATER_TEMPS_C),
+    )
     shot_parser.add_argument("--rating", type=int, help="taste rating 1-5")
-    shot_parser.add_argument("--notes")
+    shot_parser.add_argument(
+        "--notes", type=int, choices=range(1, len(TASTE_NOTES) + 1),
+        help="taste notes: " + ", ".join(
+            f"{number} = {note}"
+            for number, note in enumerate(TASTE_NOTES, start=1)),
+    )
     shot_parser.set_defaults(func=cmd_add_shot)
 
     beans_list_parser = subparsers.add_parser(
