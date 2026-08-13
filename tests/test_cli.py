@@ -12,7 +12,11 @@ Exit codes used by the CLI:
 
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
+
+from db import TASTE_NOTES
 
 # Every field the CLI treats as required, with valid values. Rejection tests
 # override exactly one of them, so the command reaches the database instead
@@ -133,6 +137,43 @@ def test_add_shot_with_zero_yield_is_accepted(cli_with_bean):
 
     assert result.returncode == 0
     assert "Added shot #1" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# Controlled vocabularies on the command line
+# ---------------------------------------------------------------------------
+
+def test_offered_water_temperature_is_stored(cli_with_bean, db_path):
+    result = cli_with_bean("add-shot", "--bean-id", "1", "--temp-c", "94",
+                           *VALID_SHOT_ARGS)
+
+    assert result.returncode == 0
+
+    with sqlite3.connect(db_path) as connection:
+        stored = connection.execute("SELECT water_temp_c FROM shots").fetchone()
+    assert stored[0] == 94.0
+
+
+def test_other_water_temperature_is_refused_by_the_parser(cli_with_bean):
+    """argparse rejects it before the database is even opened."""
+    result = cli_with_bean("add-shot", "--bean-id", "1", "--temp-c", "93",
+                           *VALID_SHOT_ARGS)
+
+    assert result.returncode == 2
+    assert "invalid choice" in result.stderr
+
+
+def test_notes_flag_takes_a_number_and_stores_the_label(cli_with_bean,
+                                                        db_path):
+    """--notes 7 is the seventh entry of TASTE_NOTES, not the literal "7"."""
+    result = cli_with_bean("add-shot", "--bean-id", "1", "--notes", "7",
+                           *VALID_SHOT_ARGS)
+
+    assert result.returncode == 0
+
+    with sqlite3.connect(db_path) as connection:
+        stored = connection.execute("SELECT taste_notes FROM shots").fetchone()
+    assert stored[0] == TASTE_NOTES[6] == "Sweet & Caramelized"
 
 
 # ---------------------------------------------------------------------------

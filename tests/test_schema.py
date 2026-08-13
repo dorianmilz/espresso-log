@@ -11,6 +11,8 @@ import sqlite3
 
 import pytest
 
+from db import TASTE_NOTES, WATER_TEMPS_C
+
 # A shot that violates nothing. Individual tests override one field at a time.
 VALID_SHOT = {
     "shot_date": "2026-08-01",
@@ -18,7 +20,7 @@ VALID_SHOT = {
     "grind_setting": 3.5,
     "extraction_time_s": 28,
     "yield_g": 36.0,
-    "water_temp_c": 93.0,
+    "water_temp_c": 94.0,
     "taste_rating": 4,
 }
 
@@ -103,6 +105,69 @@ def test_zero_yield_is_accepted(conn, bean_id):
         "SELECT yield_g FROM shots WHERE id = ?", (shot_id,)
     ).fetchone()
     assert stored["yield_g"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Controlled vocabularies
+#
+# These parametrise over the constants in db.py rather than over a second
+# hand-written list. If db.py and schema.sql ever disagree, a value here will
+# be rejected by the database and the test turns red — the copy in Python
+# cannot drift away from the schema unnoticed.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("temperature", WATER_TEMPS_C)
+def test_every_offered_water_temperature_is_accepted(conn, bean_id,
+                                                     temperature):
+    shot_id = insert_shot(conn, bean_id, water_temp_c=temperature)
+
+    stored = conn.execute(
+        "SELECT water_temp_c FROM shots WHERE id = ?", (shot_id,)
+    ).fetchone()
+    assert stored["water_temp_c"] == temperature
+
+
+@pytest.mark.parametrize("temperature", [93.0, 90.0, 100.0])
+def test_other_water_temperatures_are_rejected(conn, bean_id, temperature):
+    """The machine has three settings; anything else is a typo."""
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
+        insert_shot(conn, bean_id, water_temp_c=temperature)
+
+
+@pytest.mark.parametrize("note", TASTE_NOTES)
+def test_every_offered_taste_note_is_accepted(conn, bean_id, note):
+    shot_id = insert_shot(conn, bean_id, taste_notes=note)
+
+    stored = conn.execute(
+        "SELECT taste_notes FROM shots WHERE id = ?", (shot_id,)
+    ).fetchone()
+    assert stored["taste_notes"] == note
+
+
+@pytest.mark.parametrize(
+    "note",
+    ["caramel, long finish", "Chocolatey", "chocolatey & cocoa", ""],
+)
+def test_free_text_taste_notes_are_rejected(conn, bean_id, note):
+    """Including near misses: the spelling has to match exactly."""
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
+        insert_shot(conn, bean_id, taste_notes=note)
+
+
+@pytest.mark.parametrize("column", ["water_temp_c", "taste_notes"])
+def test_restricted_columns_still_accept_null(conn, bean_id, column):
+    """Both columns stay optional despite their fixed value lists.
+
+    A CHECK rejects a row only when the expression is FALSE. `NULL IN (...)`
+    is NULL rather than false, so an empty field passes — no extra
+    `OR ... IS NULL` needed in the schema.
+    """
+    shot_id = insert_shot(conn, bean_id, **{column: None})
+
+    stored = conn.execute(
+        f"SELECT {column} FROM shots WHERE id = ?", (shot_id,)
+    ).fetchone()
+    assert stored[column] is None
 
 
 # ---------------------------------------------------------------------------
