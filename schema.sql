@@ -45,11 +45,35 @@ CREATE TABLE IF NOT EXISTS shots (
     -- real and useful result, not a typo.
     yield_g           REAL             CHECK (yield_g >= 0),
 
-    water_temp_c      REAL,
+    -- The three settings this machine model offers: Low / Middle / High.
+    -- Deliberately tied to the DeLonghi La Specialista Arte — another
+    -- machine with different steps could not be logged without changing
+    -- this list.
+    water_temp_c      REAL             CHECK (water_temp_c IN (92.0, 94.0, 96.0)),
+
     taste_rating      INTEGER          CHECK (taste_rating BETWEEN 1 AND 5),
-    taste_notes       TEXT,
+
+    -- A controlled vocabulary rather than free text: free text cannot be
+    -- grouped, so "how do chocolatey beans score?" would be unanswerable.
+    -- Kept in step with WATER_TEMPS_C / TASTE_NOTES in src/db.py.
+    taste_notes       TEXT             CHECK (taste_notes IN (
+                                           'Chocolatey & Cocoa',
+                                           'Nutty & Toasty',
+                                           'Fruity-Sweet',
+                                           'Citrusy & Zesty',
+                                           'Floral & Tea-like',
+                                           'Spicy & Earthy',
+                                           'Sweet & Caramelized',
+                                           'Balanced & Mild'
+                                       )),
+
     machine           TEXT    DEFAULT 'DeLonghi La Specialista Arte'
 );
+
+-- Note on both lists above: a CHECK rejects a row only when the expression
+-- is FALSE. `NULL IN (...)` is neither true nor false but NULL, so leaving
+-- either column empty still passes — both stay optional without an extra
+-- `OR ... IS NULL`.
 
 
 -- Indexes for the two columns queries filter and join on most often.
