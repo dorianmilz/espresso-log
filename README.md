@@ -23,7 +23,7 @@ notes       TEXT                extraction_time_s INTEGER > 0
                                 yield_g           REAL   >= 0
                                 water_temp_c      REAL   92 | 94 | 96
                                 taste_rating      INTEGER 1-5
-                                taste_notes       TEXT   one of 8 categories
+                                taste_notes       TEXT   5-point scale
                                 machine           TEXT
 ```
 
@@ -31,9 +31,10 @@ Two columns take values from a fixed list rather than free input:
 
 - **`water_temp_c`** — the machine offers three settings: `92.0` (Low),
   `94.0` (Middle), `96.0` (High).
-- **`taste_notes`** — `Chocolatey & Cocoa`, `Nutty & Toasty`, `Fruity-Sweet`,
-  `Citrusy & Zesty`, `Floral & Tea-like`, `Spicy & Earthy`,
-  `Sweet & Caramelized`, `Balanced & Mild`.
+- **`taste_notes`** — extraction balance on a five-point scale:
+  `Very Bitter`, `Bitter`, `Balanced`, `Sour`, `Very Sour`. The scale has a
+  direction: sour means under-extracted (the water was not on the coffee
+  long enough), bitter means over-extracted, balanced is the target.
 
 Both stay optional: a `CHECK` rejects a row only when its expression is
 false, and `NULL IN (...)` is neither, so an empty field still passes.
@@ -48,10 +49,11 @@ Four decisions worth pointing out:
   nothing is a real result worth recording, not an input error.
 - **`grind_setting` is a number, not text.** That is what makes
   "which grinder setting hits the target extraction window?" answerable.
-- **`taste_notes` is a controlled vocabulary, not free text.** "Caramel, red
-  apple, long finish" reads nicely but cannot be grouped, so
-  "how do chocolatey beans score?" would stay unanswerable. The eight
-  categories cost some descriptive detail and buy `GROUP BY`.
+- **`taste_notes` measures extraction, not flavour.** How a coffee tastes
+  depends mostly on the bean; how it is extracted depends on the settings.
+  A five-point scale from bitter to sour is the axis that grind setting and
+  extraction time actually move, so the column can be grouped against both.
+  Free text could not be grouped at all.
 
 Value ranges are enforced by `CHECK` constraints in the database itself, so
 invalid rows are rejected no matter which client writes them.
@@ -87,11 +89,11 @@ Every field can also be passed as a flag, which makes the CLI scriptable:
 
 ```bash
 python3 src/log_shot.py add-shot --bean-id 3 --dose-g 18 --grind 3.5 \
-    --time-s 29 --yield-g 36 --temp-c 94 --rating 5 --notes 7
+    --time-s 29 --yield-g 36 --temp-c 94 --rating 5 --notes 3
 ```
 
 `--temp-c` takes one of the three machine settings, and `--notes` a number
-from the category list — `7` is `Sweet & Caramelized`. Both are listed in
+from the balance scale — `3` is `Balanced`. Both are listed in
 `add-shot --help`, and interactive mode offers them as numbered menus, so
 nobody has to remember the exact spelling.
 
@@ -231,22 +233,24 @@ jupyter lab notebooks/analyse.ipynb
 pytest
 ```
 
-64 tests covering three layers:
+65 tests covering three layers:
 
 - **`tests/test_schema.py`** — every `CHECK` constraint and the foreign key,
   written straight to SQLite. Each rule is tested from both sides: a value
   that must be accepted and one that must be rejected. `yield_g = 0` has its
   own test, because that is a deliberate design decision rather than an
   oversight. The two controlled vocabularies are covered value by value —
-  every allowed water temperature and taste category is inserted, near
-  misses like `chocolatey & cocoa` are rejected, and `NULL` is accepted for
-  both, since the columns stay optional.
+  every allowed water temperature and balance value is inserted, near
+  misses like `balanced` in lower case are rejected, and `NULL` is accepted
+  for both, since the columns stay optional. A regression test pins down
+  that the retired flavour categories are refused, so the scale was really
+  swapped rather than extended.
 - **`tests/test_db.py`** — `init_db()` builds the tables, indexes and view
   and is safe to run twice; `get_connection()` returns rows addressable by
   column name and has foreign key enforcement switched on.
 - **`tests/test_cli.py`** — the CLI driven as a real subprocess, so argument
   parsing, exit codes and printed output are covered too, including that
-  `--notes 7` is stored as `Sweet & Caramelized` rather than as `7`.
+  `--notes 3` is stored as `Balanced` rather than as `3`.
 
 Each test runs against its own temporary database via the `ESPRESSO_DB`
 environment variable, so `data/espresso.db` is never touched.
