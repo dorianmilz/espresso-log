@@ -11,10 +11,19 @@
 -- over two months, with a visible learning curve, one bag that clearly
 -- outperforms the others, and a few failed shots.
 --
--- taste_notes uses the controlled vocabulary from schema.sql. Shots whose
--- outcome was a failure rather than a flavour — choked, ashy, run far too
--- fast — carry NULL: none of the eight categories describes them, and
--- inventing one would misrepresent the data.
+-- taste_notes follows the extraction balance scale from schema.sql, derived
+-- from extraction_time_s rather than assigned freely: the scale measures
+-- exactly that, so a 19-second shot labelled bitter would contradict its own
+-- row. The bands are the 22-32 s target window already documented in the
+-- README — under 20 s is Very Sour, 20-21 s Sour, 22-32 s Balanced,
+-- 33-34 s Bitter, 35 s and up Very Bitter.
+--
+-- 'Bitter' therefore does not appear in this sample at all: no shot here
+-- landed in the 33-34 s band. That gap is left as it is rather than papered
+-- over by moving a boundary.
+--
+-- One shot carries NULL: 38 seconds with 0 g out, fully choked. Nothing came
+-- through, so there was nothing to taste.
 
 BEGIN TRANSACTION;
 
@@ -29,43 +38,43 @@ INSERT INTO shots
     (bean_id, shot_date, dose_g, grind_setting, extraction_time_s, yield_g, water_temp_c, taste_rating, taste_notes)
 VALUES
     -- Bag 1: learning the machine. Grinding too coarse at first.
-    (1, '2026-06-12', 18.0, 5.0, 18, 42.0, 94.0, 2, NULL),
-    (1, '2026-06-13', 18.0, 4.5, 20, 38.0, 94.0, 2, NULL),
-    (1, '2026-06-15', 18.0, 4.0, 24, 36.0, 94.0, 3, 'Balanced & Mild'),
-    (1, '2026-06-17', 18.0, 3.5, 29, 34.0, 94.0, 3, NULL),
-    (1, '2026-06-19', 18.0, 4.0, 26, 36.0, 94.0, 4, 'Fruity-Sweet'),
-    (1, '2026-06-21', 18.5, 4.0, 27, 37.0, 94.0, 4, 'Fruity-Sweet'),
-    (1, '2026-06-24', 18.5, 4.0, 25, 37.5, 94.0, 3, NULL),
-    (1, '2026-06-26', 18.5, 3.5, 31, 35.0, 94.0, 3, NULL),
+    (1, '2026-06-12', 18.0, 5.0, 18, 42.0, 94.0, 2, 'Very Sour'),
+    (1, '2026-06-13', 18.0, 4.5, 20, 38.0, 94.0, 2, 'Sour'),
+    (1, '2026-06-15', 18.0, 4.0, 24, 36.0, 94.0, 3, 'Balanced'),
+    (1, '2026-06-17', 18.0, 3.5, 29, 34.0, 94.0, 3, 'Balanced'),
+    (1, '2026-06-19', 18.0, 4.0, 26, 36.0, 94.0, 4, 'Balanced'),
+    (1, '2026-06-21', 18.5, 4.0, 27, 37.0, 94.0, 4, 'Balanced'),
+    (1, '2026-06-24', 18.5, 4.0, 25, 37.5, 94.0, 3, 'Balanced'),
+    (1, '2026-06-26', 18.5, 3.5, 31, 35.0, 94.0, 3, 'Balanced'),
 
     -- Bag 2: forgiving bean, used to dial in a repeatable routine.
-    (2, '2026-06-30', 18.0, 4.0, 22, 36.0, 92.0, 3, 'Nutty & Toasty'),
-    (2, '2026-07-02', 18.0, 4.0, 25, 36.0, 92.0, 3, 'Chocolatey & Cocoa'),
-    (2, '2026-07-04', 18.0, 3.5, 30, 34.0, 92.0, 4, 'Sweet & Caramelized'),
+    (2, '2026-06-30', 18.0, 4.0, 22, 36.0, 92.0, 3, 'Balanced'),
+    (2, '2026-07-02', 18.0, 4.0, 25, 36.0, 92.0, 3, 'Balanced'),
+    (2, '2026-07-04', 18.0, 3.5, 30, 34.0, 92.0, 4, 'Balanced'),
     (2, '2026-07-05', 18.0, 3.0, 38,  0.0, 92.0, 1, NULL),
-    (2, '2026-07-06', 18.0, 3.5, 28, 35.0, 92.0, 4, 'Sweet & Caramelized'),
-    (2, '2026-07-08', 18.5, 3.5, 29, 36.0, 94.0, 4, 'Chocolatey & Cocoa'),
-    (2, '2026-07-10', 18.5, 3.5, 27, 37.0, 94.0, 3, NULL),
-    (2, '2026-07-12', 18.5, 3.5, 30, 36.0, 94.0, 4, 'Balanced & Mild'),
+    (2, '2026-07-06', 18.0, 3.5, 28, 35.0, 92.0, 4, 'Balanced'),
+    (2, '2026-07-08', 18.5, 3.5, 29, 36.0, 94.0, 4, 'Balanced'),
+    (2, '2026-07-10', 18.5, 3.5, 27, 37.0, 94.0, 3, 'Balanced'),
+    (2, '2026-07-12', 18.5, 3.5, 30, 36.0, 94.0, 4, 'Balanced'),
 
     -- Bag 3: the standout. Same recipe repeated on purpose.
-    (3, '2026-07-15', 18.0, 4.0, 21, 38.0, 94.0, 3, 'Citrusy & Zesty'),
-    (3, '2026-07-17', 18.0, 3.5, 27, 36.0, 94.0, 4, 'Sweet & Caramelized'),
-    (3, '2026-07-19', 18.0, 3.5, 29, 36.0, 94.0, 5, 'Sweet & Caramelized'),
-    (3, '2026-07-21', 18.0, 3.5, 28, 36.0, 94.0, 5, 'Sweet & Caramelized'),
-    (3, '2026-07-23', 18.5, 3.5, 30, 37.0, 94.0, 5, 'Sweet & Caramelized'),
-    (3, '2026-07-25', 18.5, 3.5, 29, 37.0, 94.0, 4, 'Balanced & Mild'),
-    (3, '2026-07-27', 18.5, 4.0, 24, 39.0, 94.0, 4, 'Citrusy & Zesty'),
-    (3, '2026-07-30', 18.5, 3.5, 31, 36.5, 94.0, 5, 'Sweet & Caramelized'),
-    (3, '2026-08-02', 18.5, 3.5, 30, 37.0, 94.0, 4, 'Balanced & Mild'),
+    (3, '2026-07-15', 18.0, 4.0, 21, 38.0, 94.0, 3, 'Sour'),
+    (3, '2026-07-17', 18.0, 3.5, 27, 36.0, 94.0, 4, 'Balanced'),
+    (3, '2026-07-19', 18.0, 3.5, 29, 36.0, 94.0, 5, 'Balanced'),
+    (3, '2026-07-21', 18.0, 3.5, 28, 36.0, 94.0, 5, 'Balanced'),
+    (3, '2026-07-23', 18.5, 3.5, 30, 37.0, 94.0, 5, 'Balanced'),
+    (3, '2026-07-25', 18.5, 3.5, 29, 37.0, 94.0, 4, 'Balanced'),
+    (3, '2026-07-27', 18.5, 4.0, 24, 39.0, 94.0, 4, 'Balanced'),
+    (3, '2026-07-30', 18.5, 3.5, 31, 36.5, 94.0, 5, 'Balanced'),
+    (3, '2026-08-02', 18.5, 3.5, 30, 37.0, 94.0, 4, 'Balanced'),
 
     -- Bag 4: technically fine, simply not to my taste.
-    (4, '2026-08-03', 18.0, 4.0, 23, 38.0, 92.0, 2, 'Spicy & Earthy'),
-    (4, '2026-08-05', 18.0, 3.5, 28, 36.0, 92.0, 3, 'Spicy & Earthy'),
-    (4, '2026-08-06', 18.0, 3.0, 35, 33.0, 92.0, 2, NULL),
-    (4, '2026-08-08', 18.5, 3.5, 29, 36.0, 94.0, 3, 'Chocolatey & Cocoa'),
-    (4, '2026-08-09', 18.5, 3.5, 30, 37.0, 94.0, 4, 'Nutty & Toasty'),
-    (4, '2026-08-11', 18.5, 3.5, 28, 36.5, 94.0, 3, 'Balanced & Mild'),
-    (4, '2026-08-12', 18.5, 4.0, 19, 40.0, 94.0, 2, NULL);
+    (4, '2026-08-03', 18.0, 4.0, 23, 38.0, 92.0, 2, 'Balanced'),
+    (4, '2026-08-05', 18.0, 3.5, 28, 36.0, 92.0, 3, 'Balanced'),
+    (4, '2026-08-06', 18.0, 3.0, 35, 33.0, 92.0, 2, 'Very Bitter'),
+    (4, '2026-08-08', 18.5, 3.5, 29, 36.0, 94.0, 3, 'Balanced'),
+    (4, '2026-08-09', 18.5, 3.5, 30, 37.0, 94.0, 4, 'Balanced'),
+    (4, '2026-08-11', 18.5, 3.5, 28, 36.5, 94.0, 3, 'Balanced'),
+    (4, '2026-08-12', 18.5, 4.0, 19, 40.0, 94.0, 2, 'Very Sour');
 
 COMMIT;
