@@ -53,18 +53,18 @@ CREATE TABLE IF NOT EXISTS shots (
 
     taste_rating      INTEGER          CHECK (taste_rating BETWEEN 1 AND 5),
 
-    -- A controlled vocabulary rather than free text: free text cannot be
-    -- grouped, so "how do chocolatey beans score?" would be unanswerable.
+    -- A five-point scale for extraction balance, not a flavour description.
+    -- It has a direction: sour means under-extracted (the water was not on
+    -- the coffee long enough), bitter means over-extracted, balanced is the
+    -- target. That makes it analysable against grind_setting and
+    -- extraction_time_s — the two settings that move the same axis.
     -- Kept in step with WATER_TEMPS_C / TASTE_NOTES in src/db.py.
     taste_notes       TEXT             CHECK (taste_notes IN (
-                                           'Chocolatey & Cocoa',
-                                           'Nutty & Toasty',
-                                           'Fruity-Sweet',
-                                           'Citrusy & Zesty',
-                                           'Floral & Tea-like',
-                                           'Spicy & Earthy',
-                                           'Sweet & Caramelized',
-                                           'Balanced & Mild'
+                                           'Very Bitter',
+                                           'Bitter',
+                                           'Balanced',
+                                           'Sour',
+                                           'Very Sour'
                                        )),
 
     machine           TEXT    DEFAULT 'DeLonghi La Specialista Arte'

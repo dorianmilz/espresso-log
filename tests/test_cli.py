@@ -165,15 +165,15 @@ def test_other_water_temperature_is_refused_by_the_parser(cli_with_bean):
 
 def test_notes_flag_takes_a_number_and_stores_the_label(cli_with_bean,
                                                         db_path):
-    """--notes 7 is the seventh entry of TASTE_NOTES, not the literal "7"."""
-    result = cli_with_bean("add-shot", "--bean-id", "1", "--notes", "7",
+    """--notes 3 is the third entry of TASTE_NOTES, not the literal "3"."""
+    result = cli_with_bean("add-shot", "--bean-id", "1", "--notes", "3",
                            *VALID_SHOT_ARGS)
 
     assert result.returncode == 0
 
     with sqlite3.connect(db_path) as connection:
         stored = connection.execute("SELECT taste_notes FROM shots").fetchone()
-    assert stored[0] == TASTE_NOTES[6] == "Sweet & Caramelized"
+    assert stored[0] == TASTE_NOTES[2] == "Balanced"
 
 
 # ---------------------------------------------------------------------------

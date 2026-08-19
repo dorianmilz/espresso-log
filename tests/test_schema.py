@@ -146,12 +146,27 @@ def test_every_offered_taste_note_is_accepted(conn, bean_id, note):
 
 @pytest.mark.parametrize(
     "note",
-    ["caramel, long finish", "Chocolatey", "chocolatey & cocoa", ""],
+    ["a bit sour", "balanced", "BALANCED", "Very  Sour", ""],
 )
 def test_free_text_taste_notes_are_rejected(conn, bean_id, note):
     """Including near misses: the spelling has to match exactly."""
     with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
         insert_shot(conn, bean_id, taste_notes=note)
+
+
+@pytest.mark.parametrize(
+    "retired_note",
+    ["Chocolatey & Cocoa", "Nutty & Toasty", "Sweet & Caramelized"],
+)
+def test_retired_flavour_categories_are_rejected(conn, bean_id, retired_note):
+    """taste_notes used to hold eight flavour categories.
+
+    They were replaced by the extraction balance scale, not extended by it.
+    This test proves the swap actually took effect: a value from the old
+    list must no longer be accepted.
+    """
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
+        insert_shot(conn, bean_id, taste_notes=retired_note)
 
 
 @pytest.mark.parametrize("column", ["water_temp_c", "taste_notes"])

@@ -28,15 +28,15 @@ WATER_TEMPS_C = (92.0, 94.0, 96.0)
 
 TEMP_LABELS = {92.0: "Low", 94.0: "Middle", 96.0: "High"}
 
+# Extraction balance, ordered from over-extracted to under-extracted. The
+# order is what the CLI numbers and the web dropdown display, so it is part
+# of the interface, not an implementation detail.
 TASTE_NOTES = (
-    "Chocolatey & Cocoa",
-    "Nutty & Toasty",
-    "Fruity-Sweet",
-    "Citrusy & Zesty",
-    "Floral & Tea-like",
-    "Spicy & Earthy",
-    "Sweet & Caramelized",
-    "Balanced & Mild",
+    "Very Bitter",
+    "Bitter",
+    "Balanced",
+    "Sour",
+    "Very Sour",
 )
 
 

@@ -53,10 +53,8 @@ CREATE TABLE shots (
   water_temp_c      REAL          CHECK (water_temp_c IN (92.0, 94.0, 96.0)),
   taste_rating      INTEGER       CHECK (taste_rating BETWEEN 1 AND 5),
   taste_notes       TEXT          CHECK (taste_notes IN (
-                                    'Chocolatey & Cocoa', 'Nutty & Toasty',
-                                    'Fruity-Sweet',       'Citrusy & Zesty',
-                                    'Floral & Tea-like',  'Spicy & Earthy',
-                                    'Sweet & Caramelized','Balanced & Mild')),
+                                    'Very Bitter', 'Bitter', 'Balanced',
+                                    'Sour',        'Very Sour')),
   machine           TEXT DEFAULT 'DeLonghi La Specialista Arte'
 );
 ```
@@ -72,8 +70,10 @@ Notes on the constraints:
   queries and exposed through the view `v_shot_details`.
 - `water_temp_c` and `taste_notes` are **controlled vocabularies**. The
   three temperatures are the settings of this one machine model — the
-  constraint is deliberately tied to it. The eight taste categories replace
-  free text so the column can be grouped in queries.
+  constraint is deliberately tied to it. `taste_notes` is a five-point
+  extraction balance scale (sour = under-extracted, bitter = over-extracted,
+  balanced = target), not a flavour description: it is the axis that grind
+  setting and extraction time move, so it can be grouped against both.
 - Both restricted columns stay **optional**: a CHECK rejects a row only
   when its expression is false, and `NULL IN (...)` is neither true nor
   false, so an empty field passes without an extra `OR ... IS NULL`.
